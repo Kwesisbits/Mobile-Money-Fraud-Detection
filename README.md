@@ -61,7 +61,7 @@ fraud-detection-hybrid-ml/
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/<your-username>/fraud-detection-hybrid-ml.git
+git clone https://github.com/<Kwesisbits>/fraud-detection-hybrid-ml.git
 cd fraud-detection-hybrid-ml
 ````
 
@@ -186,7 +186,7 @@ The hybrid system is evaluated using:
 AI Engineer | Data Science
 📍 Ghana
 📧 [nanaamponsah391@gmail.com](mailto:nanaamponsah391@gmail.com)
-🔗 [LinkedIn](https://www.linkedin.com/in/nana-kwesi-amponsah/) | [GitHub](https://github.com/<Kwesibits>)
+🔗 [LinkedIn](https://www.linkedin.com/in/nana-kwesi-amponsah/) | [GitHub](https://github.com/<Kwesisbits>)
 
 ---
 
