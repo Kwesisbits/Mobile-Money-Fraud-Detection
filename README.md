@@ -25,7 +25,7 @@ fraud-detection-hybrid-ml/
 │
 ├── data/
 │   ├── README.md                  # Brief note on data sources and preprocessing
-│   └── sample_data.csv            # (Optional) non-sensitive sample data
+│   └── sample_data.csv            # non-sensitive sample data
 │
 ├── notebooks/
 │   ├── 1_EDA_and_Feature_Engineering.ipynb
