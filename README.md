@@ -36,11 +36,8 @@ fraud-detection-hybrid-ml/
 ├── models/
 │   ├── xgboost_model.pkl
 │   ├── autoencoder_model.h5
-│   └── hybrid_results.json        # Summary metrics or thresholds
+│   └── random_forest_model.pkl       
 │
-├── results/
-│   ├── visualizations/            # ROC curves, confusion matrices, PR curves
-│   └── reports/                   # Summaries or PDF exports
 │
 ├── src/
 │   ├── data_preprocessing.py
@@ -127,15 +124,7 @@ joblib.dump(xgb, "models/xgboost_model.pkl")
 # Save Autoencoder
 autoencoder.save("models/autoencoder_model.h5")
 
-# Save Hybrid Metrics
-hybrid_metrics = {
-    "roc_auc": hybrid_auc,
-    "precision": hybrid_precision,
-    "recall": hybrid_recall,
-    "f1": hybrid_f1
-}
-with open("models/hybrid_results.json", "w") as f:
-    json.dump(hybrid_metrics, f, indent=4)
+
 ```
 
 ---
