@@ -1,0 +1,113 @@
+"""
+This script evalutes different methods of attempting to combine the strengths of both the supervised and supervised models
+"""
+
+#method 1: assigning weight importance to both models through a hybrid score
+xgb_proba = xgb.predict_proba(X_test_full_scaled)[:, 1]
+
+reconstructions = autoencoder.predict(X_test_full_scaled)
+mse = np.mean(np.square(X_test_full_scaled- reconstructions), axis=1)
+
+mse_norm = (mse - mse.min()) / (mse.max() - mse.min())    #normalize autoencoder mse
+hybrid_score = 0.3 * xgb_proba + 0.7 * mse_norm
+
+auc = roc_auc_score(y_test_full, hybrid_score)
+print("Hybrid ROC–AUC:", auc)
+
+# Threshold for classification
+threshold = np.percentile(hybrid_score, 99)
+y_pred_hybrid = (hybrid_score >= threshold).astype(int)
+
+print("Hybrid Classification Report")
+print(classification_report(y_test_full, y_pred_hybrid))
+
+
+#Method 2: Use autoencoder as filter 
+import numpy as np
+from sklearn.metrics import classification_report, roc_auc_score, confusion_matrix
+
+# AE reconstruction error 
+reconstructions = autoencoder.predict(X_test_full_scaled, verbose=0)
+mse = np.mean(np.square(X_test_full_scaled - reconstructions), axis=1)
+
+# Define suspicious transactions based on AE threshold 
+threshold = np.percentile(mse, 90) 
+suspicious_mask = mse > threshold
+
+# Initialize hybrid predictions 
+hybrid_preds = np.zeros(len(X_test_full_scaled), dtype=int)
+
+# AE flags these as potentially fraudulent
+hybrid_preds[suspicious_mask] = 1  # initially AE says "fraud"
+
+#  Refine within the suspicious subset using XGB 
+X_suspect = X_test_full_scaled[suspicious_mask]
+rf_proba = rf.predict_proba(X_suspect)[:, 1]
+
+# XGB threshold for fraud (default 0.5, or tune via ROC)
+rf_threshold = 0.5
+rf_preds = (rf_proba >= rf_threshold).astype(int)
+
+# Replace AE predictions for suspicious samples with XGB’s call
+hybrid_preds[suspicious_mask] = rf_preds
+
+# Evaluation 
+print("Hybrid Confusion Matrix:")
+print(confusion_matrix(y_test_full, hybrid_preds))
+
+print("\nHybrid Classification Report:")
+print(classification_report(y_test_full, hybrid_preds, digits=3))
+
+roc_auc = roc_auc_score(y_test_full, hybrid_preds)
+print(f"Hybrid ROC–AUC: {roc_auc:.6f}")
+
+
+#Mehtod 3: Use supervised model as filter first 
+import numpy as np
+from sklearn.metrics import classification_report, roc_auc_score, confusion_matrix
+
+# SUPERVISED MODEL PREDICTIONS
+xgb_proba = xgb.predict_proba(X_test_full_scaled)[:, 1]   # predicted fraud probabilities
+xgb_preds = (xgb_proba >= 0.5).astype(int)
+
+print("Supervised model results (XGB):")
+print(classification_report(y_test_full, xgb_preds))
+print("ROC–AUC (XGB):", roc_auc_score(y_test_full, xgb_proba))
+
+
+# AUTOENCODER ANOMALY SCORING 
+reconstructions = autoencoder.predict(X_test_full_scaled)
+mse = np.mean(np.square(X_test_full_scaled - reconstructions), axis=1)
+
+# Normalize AE anomaly scores (0–1)
+ae_score = (mse - mse.min()) / (mse.max() - mse.min())
+
+# Binary anomaly flag (tune percentile)
+threshold = np.percentile(mse, 99) 
+ae_flag = (mse >= threshold).astype(int)
+
+print("\nAutoencoder (AE) Results:")
+print(f"AE threshold (98th percentile): {threshold:.6f}")
+print("Sample anomalies flagged:", np.sum(ae_flag))
+
+
+# Rule-based hybrid: fraud if either model says so
+hybrid_preds = np.where((xgb_preds + ae_flag) > 0, 1, 0)
+
+# Weighted hybrid score
+alpha = 0.3  
+hybrid_score = alpha * ae_score + (1 - alpha) * xgb_proba
+
+
+print("\nHybrid (Rule-based) Results:")
+print(classification_report(y_test_full, hybrid_preds))
+print("ROC–AUC (Rule Hybrid):", roc_auc_score(y_test_full, hybrid_preds))
+
+print("\nHybrid (Weighted Combination) Results:")
+print(classification_report(y_test_full, (hybrid_score >= 0.5).astype(int)))
+print("ROC–AUC (Weighted Hybrid):", roc_auc_score(y_test_full, hybrid_score))
+
+cm = confusion_matrix(y_test_full, hybrid_preds)
+print("\nHybrid Confusion Matrix:")
+print(cm)
+
